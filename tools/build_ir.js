@@ -9,9 +9,7 @@ const PROJECT_DIR = path.resolve(SCRIPT_DIR, "..");
 const VALID_LENGTHS = new Set([128, 256, 512, 1024, 2048, 4096]);
 
 function usage() {
-  console.error(
-    `Usage: node ${path.basename(process.argv[1])} <file.wav> <128|256|512|1024|2048|4096> [--source <file.cpp>] [--flash]`,
-  );
+  console.error(`Usage: node ${path.basename(process.argv[1])} <file.wav> <128|256|512|1024|2048|4096>`);
 }
 
 function fail(message) {
@@ -41,18 +39,6 @@ function run(command, args, options = {}) {
   return result.stdout ?? "";
 }
 
-function configForLength(length) {
-  if (length === 128 || length === 256) {
-    return "ir_conv.cpp";
-  }
-
-  if (length === 512 || length === 1024) {
-    return "ir_conv_fft.cpp";
-  }
-
-  return "ir_conv_fft_partitioned.cpp";
-}
-
 const [, , wavPath, lengthArg, ...flags] = process.argv;
 
 if (!wavPath || !lengthArg) {
@@ -64,35 +50,8 @@ if (!VALID_LENGTHS.has(irLength)) {
   fail("IR length must be one of: 128, 256, 512, 1024, 2048, 4096");
 }
 
-let shouldFlash = false;
-let sourceOverride = null;
-
-for (let i = 0; i < flags.length; i++) {
-  const flag = flags[i];
-
-  if (flag === "--flash") {
-    shouldFlash = true;
-  } else if (flag === "--source") {
-    sourceOverride = flags[++i];
-    if (!sourceOverride) {
-      fail("--source requires a file name");
-    }
-  } else if (flag.startsWith("--source=")) {
-    sourceOverride = flag.slice("--source=".length);
-    if (!sourceOverride) {
-      fail("--source requires a file name");
-    }
-  } else {
-    fail(`unknown option: ${flag}`);
-  }
-}
-
-const source = sourceOverride ?? configForLength(irLength);
-if (source.includes("/") || source.includes("\\") || path.extname(source) !== ".cpp") {
-  fail("--source must be a .cpp file in the ir_conv directory");
-}
-if (!fs.existsSync(path.join(PROJECT_DIR, source))) {
-  fail(`source file does not exist: ${source}`);
+if (flags.length > 0) {
+  fail(`unknown option: ${flags[0]}`);
 }
 
 const wav2irOutput = run(process.execPath, [path.join(SCRIPT_DIR, "wav2ir.js"), wavPath, String(irLength)], {
@@ -112,9 +71,3 @@ const header = [
 ].join("\n");
 
 fs.writeFileSync(path.join(PROJECT_DIR, "generated_ir.h"), header);
-
-run("make", [`CPP_IR_CONV=${source}`], { cwd: PROJECT_DIR });
-
-if (shouldFlash) {
-  run("make", ["flash"], { cwd: PROJECT_DIR });
-}

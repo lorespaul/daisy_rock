@@ -22,15 +22,14 @@ This example convolves the live stereo input, mixed to mono, with an imported
 impulse response (IR). It is intended for low-latency guitar/cabinet-style use
 on Daisy Seed.
 
-Recommended workflow: use `tools/build_ir.js` to generate the IR header, select the
-recommended implementation, and compile.
+Recommended workflow: use `tools/build_ir.js` to generate the IR header, then
+compile the firmware with `make`.
 
 ```bash
 node tools/build_ir.js path/to/ir.wav 2048
 ```
 
-The script writes `generated_ir.h`, then runs a clean build with a recommended
-target for the requested length.
+The script only writes `generated_ir.h`; it does not compile or flash firmware.
 
 ## Convert a WAV IR
 
@@ -74,9 +73,9 @@ long IRs   -> ir_conv_fft_partitioned.cpp (default)
 The FFT versions use 64-sample blocks/partitions. At 48 kHz this is about
 1.33 ms of algorithmic latency.
 
-## Build commands
+## Generate an IR Header
 
-Automatic build from WAV:
+Generate `generated_ir.h` from a WAV file:
 
 ```bash
 node tools/build_ir.js path/to/ir.wav 128
@@ -87,36 +86,30 @@ node tools/build_ir.js path/to/ir.wav 2048
 node tools/build_ir.js path/to/ir.wav 4096
 ```
 
-Override the recommended implementation:
-
-```bash
-node tools/build_ir.js path/to/ir.wav 1024 --source ir_conv_fft_partitioned.cpp
-```
-
-Manual build commands:
+## Build commands
 
 Default direct-head partitioned FFT convolution:
 
 ```bash
-make -C seed/DSP/ir_conv
+make
 ```
 
 Direct convolution:
 
 ```bash
-make -C seed/DSP/ir_conv CPP_IR_CONV=ir_conv.cpp
+make CPP_IR_CONV=ir_conv.cpp
 ```
 
 Direct-head FFT convolution:
 
 ```bash
-make -C seed/DSP/ir_conv CPP_IR_CONV=ir_conv_fft.cpp
+make CPP_IR_CONV=ir_conv_fft.cpp
 ```
 
 Direct-head partitioned FFT convolution:
 
 ```bash
-make -C seed/DSP/ir_conv CPP_IR_CONV=ir_conv_fft_partitioned.cpp
+make CPP_IR_CONV=ir_conv_fft_partitioned.cpp
 ```
 
 The default build target runs `make clean` first, so switching generated IR
@@ -125,7 +118,7 @@ length or `CPP_IR_CONV` starts from a clean build directory.
 Enable an output-stage mute/release pin after Daisy initialization:
 
 ```bash
-make -C seed/DSP/ir_conv CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPU_STAGE_PIN=15
+make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPU_STAGE_PIN=15
 ```
 
 When `ENABLE_OUTPU_STAGE_PIN` is left at the default `-1`, no output GPIO is
@@ -139,25 +132,19 @@ This does not compile first; it uploads the only `.bin` file in `build`.
 After a clean build:
 
 ```bash
-make -C seed/DSP/ir_conv flash
+make flash
 ```
 
 If you want to choose a binary explicitly:
 
 ```bash
-make -C seed/DSP/ir_conv dfu DFU_FILE=build/ir_conv.bin
-make -C seed/DSP/ir_conv dfu DFU_FILE=build/ir_conv_fft.bin
-make -C seed/DSP/ir_conv dfu DFU_FILE=build/ir_conv_fft_partitioned.bin
+make dfu DFU_FILE=build/ir_conv.bin
+make dfu DFU_FILE=build/ir_conv_fft.bin
+make dfu DFU_FILE=build/ir_conv_fft_partitioned.bin
 ```
 
 The original libDaisy `program-dfu` target is still available if you prefer to
 flash the binary selected by `TARGET`.
-
-As an alternative, `tools/build_ir.js` can build and flash in one step:
-
-```bash
-node tools/build_ir.js path/to/ir.wav 2048 --flash
-```
 
 ## Notes
 
