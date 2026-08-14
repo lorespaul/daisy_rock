@@ -33,6 +33,41 @@ make -C libDaisy
 make -C DaisySP
 ```
 
+## Updating Submodules
+
+Submodule URLs are stored in `.gitmodules`, but the exact checked-out commit is
+stored by the parent repository as a gitlink. You can inspect the pinned commits
+with:
+
+```bash
+git ls-files --stage DaisySP libDaisy stmlib
+git submodule status --recursive
+```
+
+To update a submodule intentionally, check out the desired tag, branch, or
+commit inside the submodule, rebuild the dependencies, test the firmware, then
+stage the updated gitlink from the parent repository:
+
+```bash
+cd libDaisy
+git fetch --tags
+git checkout <tag-or-commit>
+cd ..
+
+cd DaisySP
+git fetch --tags
+git checkout <tag-or-commit>
+cd ..
+
+tools/bootstrap.sh
+make
+git add libDaisy DaisySP
+```
+
+Use the same pattern for `stmlib` if its version changes. Avoid relying on
+automatic floating updates for normal builds; explicit updates keep the firmware
+build reproducible from a clean clone.
+
 This example convolves the live stereo input, mixed to mono, with an imported
 impulse response (IR). It is intended for low-latency guitar/cabinet-style use
 on Daisy Seed.
