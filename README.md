@@ -139,6 +139,21 @@ make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPUT_STAGE_PIN=15
 When `ENABLE_OUTPUT_STAGE_PIN` is left at the default `-1`, no output GPIO is
 configured.
 
+Enable the guitar delay controls:
+
+```bash
+make \
+  DELAY_ENABLE_PIN=16 \
+  DELAY_LEVEL_PIN=17 \
+  DELAY_TIME_PIN=18 \
+  DELAY_FEEDBACK_PIN=19
+```
+
+`DELAY_ENABLE_PIN` is a digital input: 0 V bypasses the delay, 3.3 V enables
+it. `DELAY_LEVEL_PIN`, `DELAY_TIME_PIN`, and `DELAY_FEEDBACK_PIN` are ADC
+inputs for potentiometers. The delay is enabled only when all four delay pins
+are set.
+
 ## Flash to Daisy Seed
 
 Put the Daisy Seed in DFU/bootloader mode, then flash the already-built binary.
