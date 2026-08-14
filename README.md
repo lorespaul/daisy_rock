@@ -18,6 +18,21 @@ git clone https://github.com/electro-smith/DaisyExamples
 git submodule update --init
 ```
 
+The firmware links against static libraries generated inside the `libDaisy` and
+`DaisySP` submodules. After cloning, initialize and build them with:
+
+```bash
+tools/bootstrap.sh
+```
+
+Equivalent manual commands:
+
+```bash
+git submodule update --init --recursive
+make -C libDaisy
+make -C DaisySP
+```
+
 This example convolves the live stereo input, mixed to mono, with an imported
 impulse response (IR). It is intended for low-latency guitar/cabinet-style use
 on Daisy Seed.
