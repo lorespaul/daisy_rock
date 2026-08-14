@@ -118,10 +118,10 @@ length or `CPP_IR_CONV` starts from a clean build directory.
 Enable an output-stage mute/release pin after Daisy initialization:
 
 ```bash
-make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPU_STAGE_PIN=15
+make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPUT_STAGE_PIN=15
 ```
 
-When `ENABLE_OUTPU_STAGE_PIN` is left at the default `-1`, no output GPIO is
+When `ENABLE_OUTPUT_STAGE_PIN` is left at the default `-1`, no output GPIO is
 configured.
 
 ## Flash to Daisy Seed

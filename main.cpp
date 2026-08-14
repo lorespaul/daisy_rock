@@ -13,8 +13,8 @@
 #define MESA_POWER_PICK_ATTACK_PIN -1
 #endif
 
-#ifndef ENABLE_OUTPU_STAGE_PIN
-#define ENABLE_OUTPU_STAGE_PIN -1
+#ifndef ENABLE_OUTPUT_STAGE_PIN
+#define ENABLE_OUTPUT_STAGE_PIN -1
 #endif
 
 #define MESA_POWER_ADC_CHANNEL_COUNT ((MESA_POWER_PRESENCE_PIN >= 0 ? 1 : 0) + (MESA_POWER_PICK_ATTACK_PIN >= 0 ? 1 : 0))
@@ -35,23 +35,23 @@ using IrConvolver = DirectHeadPartitionedFftConvolver;
 
 using namespace daisy;
 
-static DaisySeed   hw;
+static DaisySeed hw;
 static IrConvolver convolver;
 
 #if MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE || MESA_POWER_PICK_ATTACK_PIN >= 0
 static MesaPowerAmp power_amp;
 #endif
 
-#if(MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE || MESA_POWER_PICK_ATTACK_PIN >= 0) && MESA_POWER_ADC_CHANNEL_COUNT > 0
+#if (MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE || MESA_POWER_PICK_ATTACK_PIN >= 0) && MESA_POWER_ADC_CHANNEL_COUNT > 0
 static AdcChannelConfig mesa_power_adc_config[MESA_POWER_ADC_CHANNEL_COUNT];
 #endif
 
-#if ENABLE_OUTPU_STAGE_PIN >= 0
+#if ENABLE_OUTPUT_STAGE_PIN >= 0
 static dsy_gpio output_stage_enable;
 
 static void EnableOutputStage()
 {
-    output_stage_enable.pin  = hw.GetPin(ENABLE_OUTPU_STAGE_PIN);
+    output_stage_enable.pin = hw.GetPin(ENABLE_OUTPUT_STAGE_PIN);
     output_stage_enable.mode = DSY_GPIO_MODE_OUTPUT_PP;
     output_stage_enable.pull = DSY_GPIO_NOPULL;
     dsy_gpio_init(&output_stage_enable);
@@ -80,7 +80,7 @@ static void InitMesaPowerControls()
 
 static void UpdateMesaPowerControls()
 {
-#if(MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE) && MESA_POWER_PRESENCE_PIN >= 0
+#if (MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE) && MESA_POWER_PRESENCE_PIN >= 0
     power_amp.UpdatePresenceFromAdc(hw.adc.GetFloat(power_amp.PresenceAdcChannel()));
 #endif
 #if MESA_POWER_PICK_ATTACK_PIN >= 0
@@ -92,13 +92,13 @@ static void AudioCallback(AudioHandle::InterleavingInputBuffer in, AudioHandle::
 {
     UpdateMesaPowerControls();
 
-    for(size_t i = 0; i < size; i += 2)
+    for (size_t i = 0; i < size; i += 2)
     {
         const float mono = 0.5f * (in[i] + in[i + 1]);
 #if MESA_POWER_ENABLE
         const float amp = power_amp.Process(mono);
 #else
-        const float amp    = mono;
+        const float amp = mono;
 #endif
 #if MESA_POWER_PICK_ATTACK_PIN >= 0
         const float picked = power_amp.ProcessPickAttack(amp);
@@ -108,11 +108,11 @@ static void AudioCallback(AudioHandle::InterleavingInputBuffer in, AudioHandle::
         const float wet = convolver.Process(picked);
 #if MESA_POWER_POST_IR_PRESENCE
         const float tone = power_amp.ProcessPresence(wet);
-        out[i]           = tone;
-        out[i + 1]       = tone;
+        out[i] = tone;
+        out[i + 1] = tone;
 #else
-        out[i]             = wet;
-        out[i + 1]         = wet;
+        out[i] = wet;
+        out[i + 1] = wet;
 #endif
     }
 }
@@ -128,10 +128,12 @@ int main(void)
     InitMesaPowerControls();
 #endif
     convolver.Init();
-#if ENABLE_OUTPU_STAGE_PIN >= 0
+#if ENABLE_OUTPUT_STAGE_PIN >= 0
     EnableOutputStage();
 #endif
     hw.StartAudio(AudioCallback);
 
-    while(1) {}
+    while (1)
+    {
+    }
 }
