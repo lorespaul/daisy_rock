@@ -1,3 +1,4 @@
 generated_ir.h
 mesa_spice/**
 build/
+.DS_Store
