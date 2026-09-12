@@ -233,3 +233,8 @@ flash the binary selected by `TARGET`.
   sample; the remaining IR tail is processed in 64-sample FFT partitions.
 - A 32-sample FFT block would lower latency further, but it roughly doubles
   block processing frequency and increases CPU pressure.
+
+
+## Latest build
+`$ make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPUT_STAGE_PIN=16 REVERB_ENABLE_PIN=14 REVERB_LEVEL_PIN=15 DELAY_ENABLE_PIN=13 DELAY_LEVEL_PIN=17 DELAY_TIME_PIN=18 DELAY_FEEDBACK_PIN=19`
+`$ make flash`
