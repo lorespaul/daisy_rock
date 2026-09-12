@@ -6,7 +6,7 @@
 #   make CPP_IR_CONV=ir_conv_fft.cpp
 CPP_IR_CONV ?= ir_conv_fft_partitioned.cpp
 CPP_SOURCES = main.cpp $(CPP_IR_CONV)
-override CPP_SOURCES += mesa_power.cpp delay.cpp
+override CPP_SOURCES += mesa_power.cpp delay.cpp spring_reverb.cpp
 TARGET ?= $(basename $(notdir $(CPP_IR_CONV)))
 MESA_POWER_ENABLE ?= 0
 MESA_POWER_PRESENCE_PIN ?= -1
@@ -17,6 +17,8 @@ DELAY_ENABLE_PIN ?= -1
 DELAY_LEVEL_PIN ?= -1
 DELAY_TIME_PIN ?= -1
 DELAY_FEEDBACK_PIN ?= -1
+REVERB_ENABLE_PIN ?= -1
+REVERB_LEVEL_PIN ?= -1
 
 # Library Locations
 LIBDAISY_DIR ?= ./libDaisy
@@ -35,6 +37,8 @@ C_DEFS += -DDELAY_ENABLE_PIN=$(DELAY_ENABLE_PIN)
 C_DEFS += -DDELAY_LEVEL_PIN=$(DELAY_LEVEL_PIN)
 C_DEFS += -DDELAY_TIME_PIN=$(DELAY_TIME_PIN)
 C_DEFS += -DDELAY_FEEDBACK_PIN=$(DELAY_FEEDBACK_PIN)
+C_DEFS += -DREVERB_ENABLE_PIN=$(REVERB_ENABLE_PIN)
+C_DEFS += -DREVERB_LEVEL_PIN=$(REVERB_LEVEL_PIN)
 
 ifeq ($(CPP_IR_CONV),ir_conv.cpp)
 C_DEFS += -DIR_CONV_USE_DIRECT

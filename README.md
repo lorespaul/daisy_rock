@@ -184,10 +184,21 @@ make \
   DELAY_FEEDBACK_PIN=19
 ```
 
-`DELAY_ENABLE_PIN` is a digital input: 0 V bypasses the delay, 3.3 V enables
-it. `DELAY_LEVEL_PIN`, `DELAY_TIME_PIN`, and `DELAY_FEEDBACK_PIN` are ADC
+`DELAY_ENABLE_PIN` uses the internal pull-up: connect it to GND to bypass the
+delay; leave it open to enable it. `DELAY_LEVEL_PIN`, `DELAY_TIME_PIN`, and `DELAY_FEEDBACK_PIN` are ADC
 inputs for potentiometers. The delay is enabled only when all four delay pins
 are set.
+
+Enable the spring reverb controls:
+
+```bash
+make REVERB_ENABLE_PIN=20 REVERB_LEVEL_PIN=21
+```
+
+`REVERB_ENABLE_PIN` uses the internal pull-up: connect it to GND to bypass the
+reverb; leave it open to enable it. `REVERB_LEVEL_PIN` is an ADC input for the
+wet level: the minimum setting retains a subtle reverb, while the maximum gives
+a fuller tank effect. Both pins are required.
 
 ## Flash to Daisy Seed
 
