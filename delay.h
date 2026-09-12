@@ -1,5 +1,7 @@
 #pragma once
 
+#include "daisy_seed.h"
+
 #include <cstddef>
 
 class GuitarDelay
@@ -7,18 +9,9 @@ class GuitarDelay
   public:
     void Init(float sample_rate);
     void Reset();
-
-    void SetLevelAdcChannel(int channel);
-    int  LevelAdcChannel() const;
-    void SetTimeAdcChannel(int channel);
-    int  TimeAdcChannel() const;
-    void SetFeedbackAdcChannel(int channel);
-    int  FeedbackAdcChannel() const;
-
-    void UpdateLevelFromAdc(float adc_value);
-    void UpdateTimeFromAdc(float adc_value);
-    void UpdateFeedbackFromAdc(float adc_value);
-    void SetEnabled(bool enabled);
+    void InitControls(daisy::DaisySeed &hw);
+    int ConfigureControls(daisy::AdcChannelConfig *config, int channel, daisy::DaisySeed &hw);
+    void UpdateControls(const daisy::AdcHandle &adc);
 
     float Process(float input);
 
@@ -40,6 +33,7 @@ class GuitarDelay
     static float Clamp(float value, float lo, float hi);
 
     float ReadDelay(float delay_samples) const;
+    void SetEnabled(bool enabled);
 
     float  sample_rate_ = 48000.0f;
     float  delay_[kMaxDelaySamples];
@@ -53,6 +47,8 @@ class GuitarDelay
     int level_adc_channel_    = -1;
     int time_adc_channel_     = -1;
     int feedback_adc_channel_ = -1;
+
+    dsy_gpio enable_;
 
     OnePole level_smoother_;
     OnePole time_smoother_;

@@ -49,52 +49,34 @@ void GuitarDelay::Reset()
     feedback_highpass_lp_.Reset();
 }
 
-void GuitarDelay::SetLevelAdcChannel(int channel)
+void GuitarDelay::InitControls(daisy::DaisySeed &hw)
 {
-    level_adc_channel_ = channel;
+    enable_.pin = hw.GetPin(DELAY_ENABLE_PIN);
+    enable_.mode = DSY_GPIO_MODE_INPUT;
+    enable_.pull = DSY_GPIO_PULLUP;
+    dsy_gpio_init(&enable_);
 }
 
-int GuitarDelay::LevelAdcChannel() const
+int GuitarDelay::ConfigureControls(daisy::AdcChannelConfig *config, int channel, daisy::DaisySeed &hw)
 {
-    return level_adc_channel_;
+    config[channel].InitSingle(hw.GetPin(DELAY_LEVEL_PIN));
+    level_adc_channel_ = channel++;
+    config[channel].InitSingle(hw.GetPin(DELAY_TIME_PIN));
+    time_adc_channel_ = channel++;
+    config[channel].InitSingle(hw.GetPin(DELAY_FEEDBACK_PIN));
+    feedback_adc_channel_ = channel++;
+    return channel;
 }
 
-void GuitarDelay::SetTimeAdcChannel(int channel)
+void GuitarDelay::UpdateControls(const daisy::AdcHandle &adc)
 {
-    time_adc_channel_ = channel;
-}
-
-int GuitarDelay::TimeAdcChannel() const
-{
-    return time_adc_channel_;
-}
-
-void GuitarDelay::SetFeedbackAdcChannel(int channel)
-{
-    feedback_adc_channel_ = channel;
-}
-
-int GuitarDelay::FeedbackAdcChannel() const
-{
-    return feedback_adc_channel_;
-}
-
-void GuitarDelay::UpdateLevelFromAdc(float adc_value)
-{
-    const float x = Clamp(adc_value, 0.0f, 1.0f);
+    SetEnabled(dsy_gpio_read(&enable_) != 0);
+    const float x = Clamp(adc.GetFloat(level_adc_channel_), 0.0f, 1.0f);
     level_        = x * x * 0.75f;
-}
-
-void GuitarDelay::UpdateTimeFromAdc(float adc_value)
-{
-    const float x = Clamp(adc_value, 0.0f, 1.0f);
-    time_seconds_ = 0.055f + x * x * 0.895f;
-}
-
-void GuitarDelay::UpdateFeedbackFromAdc(float adc_value)
-{
-    const float x              = Clamp(adc_value, 0.0f, 1.0f);
-    const float repeats        = 1.0f + x * 9.0f;
+    const float time = Clamp(adc.GetFloat(time_adc_channel_), 0.0f, 1.0f);
+    time_seconds_ = 0.055f + time * time * 0.895f;
+    const float feedback       = Clamp(adc.GetFloat(feedback_adc_channel_), 0.0f, 1.0f);
+    const float repeats        = 1.0f + feedback * 9.0f;
     const float final_echo_gain = 0.08f;
     feedback_                  = powf(final_echo_gain, 1.0f / repeats);
 }

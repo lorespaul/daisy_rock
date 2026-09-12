@@ -1,5 +1,7 @@
 #pragma once
 
+#include "daisy_seed.h"
+
 #include <stdint.h>
 
 #ifndef MESA_POWER_PRESENCE_PIN
@@ -16,13 +18,8 @@ class MesaPowerAmp
     void SetDamping(float value);
     void SetSag(float value);
     void SetPickAttack(float value);
-
-    void SetPresenceAdcChannel(int channel);
-    int  PresenceAdcChannel() const;
-    void UpdatePresenceFromAdc(float adc_value);
-    void SetPickAttackAdcChannel(int channel);
-    int  PickAttackAdcChannel() const;
-    void UpdatePickAttackFromAdc(float adc_value);
+    int ConfigureControls(daisy::AdcChannelConfig *config, int channel, daisy::DaisySeed &hw);
+    void UpdateControls(const daisy::AdcHandle &adc);
 
     float Process(float input);
     float ProcessPickAttack(float input);

@@ -197,34 +197,29 @@ void MesaPowerAmp::SetPickAttack(float value)
     pick_attack_ = Clamp(value, 0.0f, 1.0f);
 }
 
-void MesaPowerAmp::SetPresenceAdcChannel(int channel)
+int MesaPowerAmp::ConfigureControls(daisy::AdcChannelConfig *config, int channel, daisy::DaisySeed &hw)
 {
+#if MESA_POWER_PRESENCE_PIN >= 0
+    config[channel].InitSingle(hw.GetPin(MESA_POWER_PRESENCE_PIN));
     presence_adc_channel_ = channel;
-}
-
-int MesaPowerAmp::PresenceAdcChannel() const
-{
-    return presence_adc_channel_;
-}
-
-void MesaPowerAmp::UpdatePresenceFromAdc(float adc_value)
-{
-    SetPresence(adc_value);
-}
-
-void MesaPowerAmp::SetPickAttackAdcChannel(int channel)
-{
+    channel++;
+#endif
+#if MESA_POWER_PICK_ATTACK_PIN >= 0
+    config[channel].InitSingle(hw.GetPin(MESA_POWER_PICK_ATTACK_PIN));
     pick_attack_adc_channel_ = channel;
+    channel++;
+#endif
+    return channel;
 }
 
-int MesaPowerAmp::PickAttackAdcChannel() const
+void MesaPowerAmp::UpdateControls(const daisy::AdcHandle &adc)
 {
-    return pick_attack_adc_channel_;
-}
-
-void MesaPowerAmp::UpdatePickAttackFromAdc(float adc_value)
-{
-    SetPickAttack(adc_value);
+#if (MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE) && MESA_POWER_PRESENCE_PIN >= 0
+    SetPresence(adc.GetFloat(presence_adc_channel_));
+#endif
+#if MESA_POWER_PICK_ATTACK_PIN >= 0
+    SetPickAttack(adc.GetFloat(pick_attack_adc_channel_));
+#endif
 }
 
 float MesaPowerAmp::Process(float input)

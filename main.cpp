@@ -66,7 +66,6 @@ static MesaPowerAmp power_amp;
 
 #if GUITAR_DELAY_ACTIVE
 static GuitarDelay delay;
-static dsy_gpio delay_enable;
 #endif
 
 #if CONTROL_ADC_CHANNEL_COUNT > 0
@@ -91,62 +90,24 @@ static void InitControlAdc()
 #if CONTROL_ADC_CHANNEL_COUNT > 0
     int adc_count = 0;
 #if MESA_POWER_ACTIVE
-#if MESA_POWER_PRESENCE_PIN >= 0
-    control_adc_config[adc_count].InitSingle(hw.GetPin(MESA_POWER_PRESENCE_PIN));
-    power_amp.SetPresenceAdcChannel(adc_count++);
-#endif
-#if MESA_POWER_PICK_ATTACK_PIN >= 0
-    control_adc_config[adc_count].InitSingle(hw.GetPin(MESA_POWER_PICK_ATTACK_PIN));
-    power_amp.SetPickAttackAdcChannel(adc_count++);
-#endif
+    adc_count = power_amp.ConfigureControls(control_adc_config, adc_count, hw);
 #endif
 #if GUITAR_DELAY_ACTIVE
-    control_adc_config[adc_count].InitSingle(hw.GetPin(DELAY_LEVEL_PIN));
-    delay.SetLevelAdcChannel(adc_count++);
-    control_adc_config[adc_count].InitSingle(hw.GetPin(DELAY_TIME_PIN));
-    delay.SetTimeAdcChannel(adc_count++);
-    control_adc_config[adc_count].InitSingle(hw.GetPin(DELAY_FEEDBACK_PIN));
-    delay.SetFeedbackAdcChannel(adc_count++);
+    adc_count = delay.ConfigureControls(control_adc_config, adc_count, hw);
 #endif
     hw.adc.Init(control_adc_config, adc_count);
     hw.adc.Start();
 #endif
 }
 
-#if GUITAR_DELAY_ACTIVE
-static void InitDelayControls()
-{
-    delay_enable.pin = hw.GetPin(DELAY_ENABLE_PIN);
-    delay_enable.mode = DSY_GPIO_MODE_INPUT;
-    delay_enable.pull = DSY_GPIO_NOPULL;
-    dsy_gpio_init(&delay_enable);
-}
-#endif
-
-static void UpdateMesaPowerControls()
-{
-#if (MESA_POWER_ENABLE || MESA_POWER_POST_IR_PRESENCE) && MESA_POWER_PRESENCE_PIN >= 0
-    power_amp.UpdatePresenceFromAdc(hw.adc.GetFloat(power_amp.PresenceAdcChannel()));
-#endif
-#if MESA_POWER_PICK_ATTACK_PIN >= 0
-    power_amp.UpdatePickAttackFromAdc(hw.adc.GetFloat(power_amp.PickAttackAdcChannel()));
-#endif
-}
-
-static void UpdateDelayControls()
-{
-#if GUITAR_DELAY_ACTIVE
-    delay.SetEnabled(dsy_gpio_read(&delay_enable) != 0);
-    delay.UpdateLevelFromAdc(hw.adc.GetFloat(delay.LevelAdcChannel()));
-    delay.UpdateTimeFromAdc(hw.adc.GetFloat(delay.TimeAdcChannel()));
-    delay.UpdateFeedbackFromAdc(hw.adc.GetFloat(delay.FeedbackAdcChannel()));
-#endif
-}
-
 static void AudioCallback(AudioHandle::InterleavingInputBuffer in, AudioHandle::InterleavingOutputBuffer out, size_t size)
 {
-    UpdateMesaPowerControls();
-    UpdateDelayControls();
+#if MESA_POWER_ACTIVE
+    power_amp.UpdateControls(hw.adc);
+#endif
+#if GUITAR_DELAY_ACTIVE
+    delay.UpdateControls(hw.adc);
+#endif
 
     for (size_t i = 0; i < size; i += 2)
     {
@@ -189,7 +150,7 @@ int main(void)
 #endif
 #if GUITAR_DELAY_ACTIVE
     delay.Init(hw.AudioSampleRate());
-    InitDelayControls();
+    delay.InitControls(hw);
 #endif
     InitControlAdc();
     convolver.Init();
