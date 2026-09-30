@@ -7,6 +7,8 @@
 class GuitarDelay
 {
   public:
+    static constexpr size_t kMaxDelaySamples = 48000;
+
     void Init(float sample_rate);
     void Reset();
     void InitControls(daisy::DaisySeed &hw);
@@ -28,15 +30,13 @@ class GuitarDelay
         float z_ = 0.0f;
     };
 
-    static constexpr size_t kMaxDelaySamples = 48000;
-
     static float Clamp(float value, float lo, float hi);
 
     float ReadDelay(float delay_samples) const;
     void SetEnabled(bool enabled);
 
     float  sample_rate_ = 48000.0f;
-    float  delay_[kMaxDelaySamples];
+    float *delay_ = nullptr;
     size_t write_index_ = 0;
 
     float enabled_smooth_ = 0.0f;

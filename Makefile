@@ -19,6 +19,11 @@ DELAY_TIME_PIN ?= -1
 DELAY_FEEDBACK_PIN ?= -1
 REVERB_ENABLE_PIN ?= -1
 REVERB_LEVEL_PIN ?= -1
+IR_SELECTOR_PIN ?= -1
+APP_TYPE ?= BOOT_SRAM
+ifneq ($(APP_TYPE),BOOT_SRAM)
+$(error IRs in QSPI require APP_TYPE=BOOT_SRAM)
+endif
 
 # Library Locations
 LIBDAISY_DIR ?= ./libDaisy
@@ -39,6 +44,7 @@ C_DEFS += -DDELAY_TIME_PIN=$(DELAY_TIME_PIN)
 C_DEFS += -DDELAY_FEEDBACK_PIN=$(DELAY_FEEDBACK_PIN)
 C_DEFS += -DREVERB_ENABLE_PIN=$(REVERB_ENABLE_PIN)
 C_DEFS += -DREVERB_LEVEL_PIN=$(REVERB_LEVEL_PIN)
+C_DEFS += -DIR_SELECTOR_PIN=$(IR_SELECTOR_PIN)
 
 ifeq ($(CPP_IR_CONV),ir_conv.cpp)
 C_DEFS += -DIR_CONV_USE_DIRECT
@@ -62,6 +68,20 @@ ASM_SOURCES += arm_bitreversal2.s
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
 include $(SYSTEM_FILES_DIR)/Makefile
 
+# BOOT_SRAM copies the application into internal SRAM; keep only IR samples in QSPI.
+IR_FLASH_ADDRESS := 0x90100000
+IR_FLASH_LIMIT := 0x907f0000
+LDFLAGS += -Wl,--section-start=.qspiflash_data=$(IR_FLASH_ADDRESS)
+BIN = $(CP) -O binary -S --remove-section=.qspiflash_data
+
+$(BUILD_DIR)/$(TARGET).ir.bin: $(BUILD_DIR)/$(TARGET).elf
+	$(CP) -O binary --only-section=.qspiflash_data $< $@
+
+$(BUILD_DIR)/$(TARGET).flash.bin: $(BUILD_DIR)/$(TARGET).bin $(BUILD_DIR)/$(TARGET).ir.bin tools/pack_firmware.js
+	node tools/pack_firmware.js $< $(BUILD_DIR)/$(TARGET).ir.bin $@ $(IR_FLASH_ADDRESS) $(IR_FLASH_LIMIT)
+
+all: $(BUILD_DIR)/$(TARGET).flash.bin
+
 .DEFAULT_GOAL := rebuild
 
 .PHONY: rebuild dfu flash
@@ -70,17 +90,10 @@ rebuild:
 	$(MAKE) all
 
 dfu:
-	@test -n "$(DFU_FILE)" || (echo "Usage: make dfu DFU_FILE=build/ir_conv_fft.bin"; exit 2)
+	@test -n "$(DFU_FILE)" || (echo "Usage: make dfu DFU_FILE=build/ir_conv_fft.flash.bin"; exit 2)
 	dfu-util -a 0 -s $(FLASH_ADDRESS):leave -D $(DFU_FILE) -d ,0483:$(USBPID)
 
 flash:
-	@set -- $(BUILD_DIR)/*.bin; \
-	if [ "$$1" = "$(BUILD_DIR)/*.bin" ]; then \
-		echo "No .bin file found in $(BUILD_DIR). Build first."; \
-		exit 2; \
-	fi; \
-	if [ "$$#" -ne 1 ]; then \
-		echo "Multiple .bin files found in $(BUILD_DIR). Use: make dfu DFU_FILE=<file>"; \
-		exit 2; \
-	fi; \
-	$(MAKE) dfu DFU_FILE="$$1"
+	@set -- $(BUILD_DIR)/*.flash.bin; \
+	  test "$$#" -eq 1 && test -f "$$1" || { echo "Build first with make; expected one .flash.bin in $(BUILD_DIR)"; exit 2; }; \
+	  $(MAKE) dfu DFU_FILE="$$1"

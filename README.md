@@ -76,7 +76,7 @@ Recommended workflow: use `tools/build_ir.js` to generate the IR header, then
 compile the firmware with `make`.
 
 ```bash
-node tools/build_ir.js path/to/ir.wav 2048
+node tools/build_ir.js path/to/first.wav path/to/second.wav 4096
 ```
 
 The script only writes `generated_ir.h`; it does not compile or flash firmware.
@@ -95,23 +95,43 @@ Supported generated IR lengths:
 128, 256, 512, 1024, 2048, 4096
 ```
 
-The C++ examples read the length from `kIrSize` in `generated_ir.h`; it is not
-a compiler define.
+`generated_ir.h` contains only the float array. The tracked `ir.h` includes it,
+derives `kIrSize` and `kIrCount`, and handles the QSPI-to-SDRAM copy. The IR
+length is not a compiler define.
 
-If you convert manually, set `kIrSize` and paste the generated array into
-`generated_ir.h`:
+If you convert manually, paste only the array into `generated_ir.h`:
 
 ```cpp
-static constexpr size_t kIrSize = 2048;
-static const float ir[kIrSize] = {1.0f};
+static const float irs_qspi[][2048] IR_QSPI_STORAGE = {{1.0f}};
 ```
 
-The IR is declared `static const`, so on STM32 it is placed in flash/rodata
-rather than regular RAM.
+With `BOOT_SRAM`, the Daisy bootloader copies the first 480 KiB starting at
+`0x90040000` from QSPI into internal SRAM. The IR array starts at `0x90100000`,
+768 KiB after the firmware start, so it is outside that copy. After `hw.Init()`
+has initialized the SDRAM, `convolver.Init()` copies the IR bank from QSPI to
+SDRAM. Convolution reads `irs` from SDRAM.
+`make` packs firmware and IRs into one image for USB DFU.
+The IR bank can occupy up to 6.94 MiB; the last 64 KiB QSPI sector remains
+available for the saved selection.
+All WAVs are converted to the same `kIrSize` and keep their command-line order.
+The local generated header uses two 4096-sample Mesa IRs.
+
+To select the next IR with a momentary button wired from a Seed pin to GND:
+
+```bash
+make IR_SELECTOR_PIN=14
+```
+
+The button uses the internal pull-up. The selected index is saved in the last
+4 KiB sector of the Seed's external QSPI flash and restored at startup; an
+invalid saved index falls back to 0. The default `BOOT_SRAM` build executes
+from SRAM, so the QSPI can store this setting. Changing IR briefly
+stops audio while the FFT and flash are updated.
+The delay and spring reverb sample buffers also live in SDRAM.
 
 ## Which implementation to use
 
-Each implementation can compile against any `kIrSize` from `generated_ir.h`.
+Each implementation can compile against any `kIrSize` derived in `ir.h`.
 For low-latency live guitar, this split is still a useful starting point:
 
 ```txt
@@ -138,7 +158,7 @@ node tools/build_ir.js path/to/ir.wav 4096
 
 ## Build commands
 
-Default direct-head partitioned FFT convolution:
+Default direct-head partitioned FFT convolution (`APP_TYPE=BOOT_SRAM`):
 
 ```bash
 make
@@ -202,25 +222,26 @@ a fuller tank effect. Both pins are required.
 
 ## Flash to Daisy Seed
 
-Put the Daisy Seed in DFU/bootloader mode, then flash the already-built binary.
-This does not compile first; it uploads the only `.bin` file in `build`.
+Install the standard Daisy bootloader once: put the Seed in STM32 DFU mode
+(hold BOOT while pressing RESET), then run:
 
-After a clean build:
+```bash
+make program-boot
+```
+
+This replaces the previous internal-flash firmware. For later updates, compile
+with the same `make` command as before. It deletes and recreates `build/`, then
+prepares the complete image for flashing. The image name follows `CPP_IR_CONV`.
+Press RESET without holding BOOT. While the Daisy bootloader LED is pulsing, run:
 
 ```bash
 make flash
 ```
 
-If you want to choose a binary explicitly:
-
-```bash
-make dfu DFU_FILE=build/ir_conv.bin
-make dfu DFU_FILE=build/ir_conv_fft.bin
-make dfu DFU_FILE=build/ir_conv_fft_partitioned.bin
-```
-
-The original libDaisy `program-dfu` target is still available if you prefer to
-flash the binary selected by `TARGET`.
+Press BOOT during the pulsing window if you need more time; this extends the
+Daisy bootloader's DFU window. Holding BOOT while pressing RESET enters the
+STM32 DFU mode used only for installing the Daisy bootloader. `make flash`
+uploads the prepared image and does not compile during the DFU window.
 
 ## Notes
 
@@ -236,5 +257,5 @@ flash the binary selected by `TARGET`.
 
 
 ## Latest build
-`$ make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPUT_STAGE_PIN=16 REVERB_ENABLE_PIN=14 REVERB_LEVEL_PIN=15 DELAY_ENABLE_PIN=13 DELAY_LEVEL_PIN=17 DELAY_TIME_PIN=18 DELAY_FEEDBACK_PIN=19`
+`$ make CPP_IR_CONV=ir_conv_fft_partitioned.cpp ENABLE_OUTPUT_STAGE_PIN=16 REVERB_ENABLE_PIN=14 REVERB_LEVEL_PIN=15 DELAY_ENABLE_PIN=13 DELAY_LEVEL_PIN=17 DELAY_TIME_PIN=18 DELAY_FEEDBACK_PIN=19 IR_SELECTOR_PIN=12`
 `$ make flash`

@@ -30,7 +30,20 @@ static void PackedSpectrumMultiplyAccumulate(float *dst, const float *a, const f
 
 void DirectHeadPartitionedFftConvolver::Init()
 {
+    LoadIrs();
     InitRfftFast(&fft_);
+    SetIr(0);
+}
+
+void DirectHeadPartitionedFftConvolver::SetIr(size_t index)
+{
+    ir_index_ = index < kIrCount ? index : 0;
+    for(size_t i = 0; i < kPartitionedConvolverPartitionSize; i++)
+        input_block_[i] = output_block_[i] = head_delay_[i] = overlap_[i] = 0.0f;
+    for(size_t partition = 0; partition < kPartitionedConvolverNumPartitions; partition++)
+        for(size_t i = 0; i < kPartitionedConvolverFftSize; i++)
+            input_fft_[partition][i] = 0.0f;
+    input_count_ = output_index_ = write_partition_ = head_write_index_ = 0;
 
     for(size_t partition = 0; partition < kPartitionedConvolverNumPartitions; partition++)
     {
@@ -39,7 +52,7 @@ void DirectHeadPartitionedFftConvolver::Init()
         for(size_t i = 0; i < kPartitionedConvolverFftSize; i++)
             fft_input_[i] = 0.0f;
         for(size_t i = 0; i < kPartitionedConvolverPartitionSize; i++)
-            fft_input_[i] = ir[kPartitionedConvolverHeadSize + partition * kPartitionedConvolverPartitionSize + i];
+            fft_input_[i] = irs[ir_index_][kPartitionedConvolverHeadSize + partition * kPartitionedConvolverPartitionSize + i];
 
         arm_rfft_fast_f32(&fft_, fft_input_, dst, 0);
     }
@@ -53,7 +66,7 @@ float DirectHeadPartitionedFftConvolver::Process(float input)
     size_t read        = head_write_index_;
     for(size_t i = 0; i < kPartitionedConvolverHeadSize; i++)
     {
-        head_output += ir[i] * head_delay_[read];
+        head_output += irs[ir_index_][i] * head_delay_[read];
         read = read == 0 ? kPartitionedConvolverHeadSize - 1 : read - 1;
     }
 

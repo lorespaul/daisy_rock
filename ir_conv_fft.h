@@ -1,14 +1,7 @@
 #pragma once
 
 #include "arm_math.h"
-#include <cstddef>
-
-#if __has_include("generated_ir.h")
-#include "generated_ir.h"
-#else
-static constexpr size_t kIrSize     = 512;
-static const float      ir[kIrSize] = {1.0f};
-#endif
+#include "ir.h"
 
 static constexpr size_t kFftConvolverBlockSize = 64;
 
@@ -24,6 +17,8 @@ class FftConvolver
     static constexpr size_t kAudioBlockSize = kFftConvolverBlockSize;
 
     void  Init();
+    void  SetIr(size_t index);
+    size_t NextIr() { SetIr(ir_index_ + 1); return ir_index_; }
     float Process(float input);
 
   private:
@@ -42,4 +37,5 @@ class FftConvolver
     size_t                     input_count_                          = 0;
     size_t                     output_index_                         = 0;
     size_t                     head_write_index_                     = 0;
+    size_t                     ir_index_                            = 0;
 };

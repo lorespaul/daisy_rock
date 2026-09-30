@@ -1,23 +1,19 @@
 #pragma once
 
-#include <cstddef>
-
-#if __has_include("generated_ir.h")
-#include "generated_ir.h"
-#else
-static constexpr size_t kIrSize     = 128;
-static const float      ir[kIrSize] = {1.0f};
-#endif
+#include "ir.h"
 
 class DirectConvolver
 {
   public:
     static constexpr size_t kAudioBlockSize = 4;
 
-    void  Init() {}
+    void  Init();
+    void  SetIr(size_t index);
+    size_t NextIr() { SetIr(ir_index_ + 1); return ir_index_; }
     float Process(float input);
 
   private:
     float  delay_[kIrSize] = {};
     size_t write_index_    = 0;
+    size_t ir_index_       = 0;
 };

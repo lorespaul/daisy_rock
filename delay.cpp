@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+static float DSY_SDRAM_BSS delay_buffer[GuitarDelay::kMaxDelaySamples];
+
 void GuitarDelay::OnePole::Init(float sample_rate, float frequency_hz)
 {
     const float x = -2.0f * 3.14159265358979323846f * frequency_hz / sample_rate;
@@ -22,6 +24,7 @@ float GuitarDelay::OnePole::Process(float input)
 void GuitarDelay::Init(float sample_rate)
 {
     sample_rate_ = sample_rate;
+    delay_ = delay_buffer;
 
     level_smoother_.Init(sample_rate_, 8.0f);
     time_smoother_.Init(sample_rate_, 3.0f);

@@ -2,14 +2,17 @@
 
 #include <math.h>
 
+static SpringReverb::Buffers DSY_SDRAM_BSS reverb_buffers;
+
 void SpringReverb::Init(float sample_rate)
 {
     (void)sample_rate;
-    Clear(diffuser1_, kDiffuser1Size);
-    Clear(diffuser2_, kDiffuser2Size);
-    Clear(diffuser3_, kDiffuser3Size);
-    Clear(comb1_, kComb1Size);
-    Clear(comb2_, kComb2Size);
+    buffers_ = &reverb_buffers;
+    Clear(buffers_->diffuser1, kDiffuser1Size);
+    Clear(buffers_->diffuser2, kDiffuser2Size);
+    Clear(buffers_->diffuser3, kDiffuser3Size);
+    Clear(buffers_->comb1, kComb1Size);
+    Clear(buffers_->comb2, kComb2Size);
 }
 
 void SpringReverb::InitControls(daisy::DaisySeed &hw)
@@ -39,12 +42,12 @@ float SpringReverb::Process(float input)
     // Spring tanks reject much of the low end and build a dense, metallic tail.
     input_low_ += 0.018f * (input - input_low_);
     float tank = input - input_low_;
-    tank       = ProcessAllpass(tank, diffuser1_, kDiffuser1Size, diffuser1_index_);
-    tank       = ProcessAllpass(tank, diffuser2_, kDiffuser2Size, diffuser2_index_);
-    tank       = ProcessAllpass(tank, diffuser3_, kDiffuser3Size, diffuser3_index_);
+    tank       = ProcessAllpass(tank, buffers_->diffuser1, kDiffuser1Size, diffuser1_index_);
+    tank       = ProcessAllpass(tank, buffers_->diffuser2, kDiffuser2Size, diffuser2_index_);
+    tank       = ProcessAllpass(tank, buffers_->diffuser3, kDiffuser3Size, diffuser3_index_);
 
-    const float comb1 = ProcessComb(tank, comb1_, kComb1Size, comb1_index_, comb1_filter_);
-    const float comb2 = ProcessComb(tank, comb2_, kComb2Size, comb2_index_, comb2_filter_);
+    const float comb1 = ProcessComb(tank, buffers_->comb1, kComb1Size, comb1_index_, comb1_filter_);
+    const float comb2 = ProcessComb(tank, buffers_->comb2, kComb2Size, comb2_index_, comb2_filter_);
     const float wet   = 0.5f * (comb1 + comb2);
     return input + wet * level_ * enabled_;
 }

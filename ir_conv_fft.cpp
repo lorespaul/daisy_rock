@@ -61,12 +61,24 @@ static void PackedSpectrumMultiplyAccumulate(float *dst, const float *a, const f
 
 void FftConvolver::Init()
 {
+    LoadIrs();
     InitRfftFast(&fft_, kFftConvolverFftSize);
+    SetIr(0);
+}
+
+void FftConvolver::SetIr(size_t index)
+{
+    ir_index_ = index < kIrCount ? index : 0;
+    for(size_t i = 0; i < kFftConvolverFftSize; i++)
+        history_[i] = 0.0f;
+    for(size_t i = 0; i < kFftConvolverBlockSize; i++)
+        input_block_[i] = output_block_[i] = head_delay_[i] = 0.0f;
+    input_count_ = output_index_ = head_write_index_ = 0;
 
     for(size_t i = 0; i < kFftConvolverFftSize; i++)
         fft_input_[i] = 0.0f;
     for(size_t i = 0; i < kFftConvolverTailSize; i++)
-        fft_input_[i] = ir[kFftConvolverHeadSize + i];
+        fft_input_[i] = irs[ir_index_][kFftConvolverHeadSize + i];
 
     arm_rfft_fast_f32(&fft_, fft_input_, ir_fft_, 0);
 }
@@ -79,7 +91,7 @@ float FftConvolver::Process(float input)
     size_t read        = head_write_index_;
     for(size_t i = 0; i < kFftConvolverHeadSize; i++)
     {
-        head_output += ir[i] * head_delay_[read];
+        head_output += irs[ir_index_][i] * head_delay_[read];
         read = read == 0 ? kFftConvolverHeadSize - 1 : read - 1;
     }
 

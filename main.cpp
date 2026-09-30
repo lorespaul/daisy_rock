@@ -3,6 +3,15 @@
 #include "mesa_power.h"
 #include "spring_reverb.h"
 
+#ifndef IR_SELECTOR_PIN
+#define IR_SELECTOR_PIN -1
+#endif
+
+#if IR_SELECTOR_PIN >= 0
+#include "hid/switch.h"
+#include "util/PersistentStorage.h"
+#endif
+
 #ifndef MESA_POWER_ENABLE
 #define MESA_POWER_ENABLE 0
 #endif
@@ -71,6 +80,12 @@ using namespace daisy;
 
 static DaisySeed hw;
 static IrConvolver convolver;
+
+#if IR_SELECTOR_PIN >= 0
+static Switch ir_selector;
+// Last 4 KiB sector of the Seed's 8 MiB QSPI flash, reserved for the selected IR.
+static PersistentStorage<uint32_t> ir_selection(hw.qspi);
+#endif
 
 #if MESA_POWER_ACTIVE
 static MesaPowerAmp power_amp;
@@ -185,6 +200,11 @@ int main(void)
 #endif
     InitControlAdc();
     convolver.Init();
+#if IR_SELECTOR_PIN >= 0
+    ir_selection.Init(0, 0x7ff000);
+    convolver.SetIr(ir_selection.GetSettings());
+    ir_selector.Init(hw.GetPin(IR_SELECTOR_PIN));
+#endif
 #if ENABLE_OUTPUT_STAGE_PIN >= 0
     EnableOutputStage();
 #endif
@@ -192,5 +212,16 @@ int main(void)
 
     while (1)
     {
+#if IR_SELECTOR_PIN >= 0
+        ir_selector.Debounce();
+        if(ir_selector.RisingEdge())
+        {
+            hw.StopAudio();
+            ir_selection.GetSettings() = convolver.NextIr();
+            ir_selection.Save();
+            hw.StartAudio(AudioCallback);
+        }
+        System::Delay(1);
+#endif
     }
 }
