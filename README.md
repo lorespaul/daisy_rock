@@ -105,16 +105,26 @@ If you convert manually, paste only the array into `generated_ir.h`:
 static const float irs_qspi[][2048] IR_QSPI_STORAGE = {{1.0f}};
 ```
 
-With `BOOT_SRAM`, the Daisy bootloader copies the first 480 KiB starting at
-`0x90040000` from QSPI into internal SRAM. The IR array starts at `0x90100000`,
-768 KiB after the firmware start, so it is outside that copy. After `hw.Init()`
-has initialized the SDRAM, `convolver.Init()` copies the IR bank from QSPI to
-SDRAM. Convolution reads `irs` from SDRAM.
-`make` packs firmware and IRs into one image for USB DFU.
-The IR bank can occupy up to 6.94 MiB; the last 64 KiB QSPI sector remains
-available for the saved selection.
+### QSPI memory map
+
+The Seed's external QSPI flash spans `0x90000000-0x907FFFFF` (8 MiB):
+
+| QSPI addresses | Size | Contents |
+| --- | ---: | --- |
+| `0x90000000-0x9003FFFF` | 256 KiB | Left free by the Daisy bootloader; the bootloader code is in internal flash. |
+| `0x90040000-0x900B7FFF` | 480 KiB | Firmware image copied to internal SRAM at boot. Bytes after the actual firmware are `0xFF` padding in the combined `.bin`. |
+| `0x900B8000-0x9045FFFF` | 3,744 KiB | IR bank, starting immediately after the SRAM copy area. Its size depends on the generated IR count. |
+| `0x90460000-0x907FEFFF` | 3,708 KiB | Reserved for future persistent data, allocated from the end backward. |
+| `0x907FF000-0x907FFFFF` | 4 KiB | Final erase sector: selected IR index. The value itself uses only a few bytes. |
+
+`make` packs firmware and IRs into one contiguous image for USB DFU. The
+`0x90460000` boundary is aligned to the bootloader's 64 KiB erase sectors;
+the build rejects an IR bank that reaches the persistent area. The selection
+address is the QSPI base `0x90000000` plus the `0x7FF000` offset passed to
+`PersistentStorage::Init()`. After `hw.Init()` initializes SDRAM,
+`convolver.Init()` copies the IR bank from QSPI to SDRAM. Convolution reads
+`irs` from SDRAM.
 All WAVs are converted to the same `kIrSize` and keep their command-line order.
-The local generated header uses two 4096-sample Mesa IRs.
 
 To select the next IR with a momentary button wired from a Seed pin to GND:
 

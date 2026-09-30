@@ -83,7 +83,6 @@ static IrConvolver convolver;
 
 #if IR_SELECTOR_PIN >= 0
 static Switch ir_selector;
-// Last 4 KiB sector of the Seed's 8 MiB QSPI flash, reserved for the selected IR.
 static PersistentStorage<uint32_t> ir_selection(hw.qspi);
 #endif
 
@@ -201,6 +200,7 @@ int main(void)
     InitControlAdc();
     convolver.Init();
 #if IR_SELECTOR_PIN >= 0
+    // Save settings from the end of the 8 MiB QSPI backward: 0x7ff000 is its last 4 KiB sector.
     ir_selection.Init(0, 0x7ff000);
     convolver.SetIr(ir_selection.GetSettings());
     ir_selector.Init(hw.GetPin(IR_SELECTOR_PIN));

@@ -69,8 +69,9 @@ SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
 include $(SYSTEM_FILES_DIR)/Makefile
 
 # BOOT_SRAM copies the application into internal SRAM; keep only IR samples in QSPI.
-IR_FLASH_ADDRESS := 0x90100000
-IR_FLASH_LIMIT := 0x907f0000
+IR_FLASH_ADDRESS := 0x900b8000
+# 64 KiB-aligned midpoint: IRs below, persistent data above.
+IR_FLASH_LIMIT := 0x90460000
 LDFLAGS += -Wl,--section-start=.qspiflash_data=$(IR_FLASH_ADDRESS)
 BIN = $(CP) -O binary -S --remove-section=.qspiflash_data
 
