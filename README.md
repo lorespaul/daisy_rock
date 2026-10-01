@@ -1,4 +1,20 @@
-# IR Convolution
+# IR Convolution and effects
+
+## Tested hardware
+
+This firmware has been tested on a Daisy Seed 65 MB.
+
+## Effects and controls
+
+The firmware convolves the input with an impulse response and can also add a
+guitar delay and a spring reverb. Both effects are enabled by assigning their
+control pins at build time (see [Build commands](#build-commands)).
+
+- **Delay:** an enable switch bypasses the effect when connected to GND;
+  potentiometers control echo level, delay time (about 55-950 ms), and feedback
+  (the number of repeats).
+- **Spring reverb:** an enable switch bypasses the effect when connected to
+  GND; a potentiometer controls the wet level, from subtle to fuller reverb.
 
 ## Getting the Source
 
