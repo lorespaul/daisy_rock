@@ -1,4 +1,4 @@
-#include "../mesa_power.h"
+#include "../src/emulation/mesa_power.h"
 
 #include <cmath>
 #include <cstdio>

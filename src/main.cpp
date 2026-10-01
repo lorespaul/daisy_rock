@@ -1,7 +1,7 @@
 #include "daisy_seed.h"
-#include "delay.h"
-#include "mesa_power.h"
-#include "spring_reverb.h"
+#include "effects/delay.h"
+#include "emulation/mesa_power.h"
+#include "effects/spring_reverb.h"
 
 #ifndef IR_SELECTOR_PIN
 #define IR_SELECTOR_PIN -1
@@ -63,16 +63,16 @@
     (MESA_POWER_ADC_CHANNEL_COUNT + GUITAR_DELAY_ADC_CHANNEL_COUNT + SPRING_REVERB_ADC_CHANNEL_COUNT)
 
 #if defined(IR_CONV_USE_DIRECT)
-#include "ir_conv.h"
+#include "convolution/ir_conv.h"
 using IrConvolver = DirectConvolver;
 #elif defined(IR_CONV_USE_FFT)
-#include "ir_conv_fft.h"
+#include "convolution/ir_conv_fft.h"
 using IrConvolver = FftConvolver;
 #elif defined(IR_CONV_USE_FFT_PARTITIONED)
-#include "ir_conv_fft_partitioned.h"
+#include "convolution/ir_conv_fft_partitioned.h"
 using IrConvolver = DirectHeadPartitionedFftConvolver;
 #else
-#include "ir_conv_fft_partitioned.h"
+#include "convolution/ir_conv_fft_partitioned.h"
 using IrConvolver = DirectHeadPartitionedFftConvolver;
 #endif
 

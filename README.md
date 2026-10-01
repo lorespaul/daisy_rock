@@ -95,7 +95,7 @@ compile the firmware with `make`.
 node tools/build_ir.js path/to/first.wav path/to/second.wav 4096
 ```
 
-The script only writes `generated_ir.h`; it does not compile or flash firmware.
+The script only writes `src/convolution/generated_ir.h`; it does not compile or flash firmware.
 
 ## Convert a WAV IR
 
@@ -111,11 +111,12 @@ Supported generated IR lengths:
 128, 256, 512, 1024, 2048, 4096
 ```
 
-`generated_ir.h` contains only the float array. The tracked `ir.h` includes it,
+`src/convolution/generated_ir.h` contains only the float array. The tracked
+`src/convolution/ir.h` includes it,
 derives `kIrSize` and `kIrCount`, and handles the QSPI-to-SDRAM copy. The IR
 length is not a compiler define.
 
-If you convert manually, paste only the array into `generated_ir.h`:
+If you convert manually, paste only the array into `src/convolution/generated_ir.h`:
 
 ```cpp
 static const float irs_qspi[][2048] IR_QSPI_STORAGE = {{1.0f}};
@@ -157,13 +158,13 @@ The delay and spring reverb sample buffers also live in SDRAM.
 
 ## Which implementation to use
 
-Each implementation can compile against any `kIrSize` derived in `ir.h`.
+Each implementation can compile against any `kIrSize` derived in `src/convolution/ir.h`.
 For low-latency live guitar, this split is still a useful starting point:
 
 ```txt
-short IRs  -> ir_conv.cpp
-medium IRs -> ir_conv_fft.cpp
-long IRs   -> ir_conv_fft_partitioned.cpp (default)
+short IRs  -> src/convolution/ir_conv.cpp
+medium IRs -> src/convolution/ir_conv_fft.cpp
+long IRs   -> src/convolution/ir_conv_fft_partitioned.cpp (default)
 ```
 
 The FFT versions use 64-sample blocks/partitions. At 48 kHz this is about
@@ -171,7 +172,7 @@ The FFT versions use 64-sample blocks/partitions. At 48 kHz this is about
 
 ## Generate an IR Header
 
-Generate `generated_ir.h` from a WAV file:
+Generate `src/convolution/generated_ir.h` from a WAV file:
 
 ```bash
 node tools/build_ir.js path/to/ir.wav 128
@@ -271,11 +272,11 @@ uploads the prepared image and does not compile during the DFU window.
 
 ## Notes
 
-- `ir_conv.cpp` has effectively zero algorithmic latency, but CPU cost grows
+- `src/convolution/ir_conv.cpp` has effectively zero algorithmic latency, but CPU cost grows
   linearly with IR length.
-- `ir_conv_fft.cpp` uses a 64-sample direct head plus an RFFT tail for medium
+- `src/convolution/ir_conv_fft.cpp` uses a 64-sample direct head plus an RFFT tail for medium
   IRs.
-- `ir_conv_fft_partitioned.cpp` uses a 64-sample direct head plus an RFFT
+- `src/convolution/ir_conv_fft_partitioned.cpp` uses a 64-sample direct head plus an RFFT
   partitioned tail. The first 64 IR samples are processed immediately per
   sample; the remaining IR tail is processed in 64-sample FFT partitions.
 - A 32-sample FFT block would lower latency further, but it roughly doubles

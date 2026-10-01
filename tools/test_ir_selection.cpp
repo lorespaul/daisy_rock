@@ -1,4 +1,4 @@
-#include "ir_conv.h"
+#include "../src/convolution/ir_conv.h"
 #include <cassert>
 
 int main()

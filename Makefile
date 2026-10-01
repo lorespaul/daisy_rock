@@ -5,8 +5,8 @@
 #   make CPP_IR_CONV=ir_conv.cpp
 #   make CPP_IR_CONV=ir_conv_fft.cpp
 CPP_IR_CONV ?= ir_conv_fft_partitioned.cpp
-CPP_SOURCES = main.cpp $(CPP_IR_CONV)
-override CPP_SOURCES += mesa_power.cpp delay.cpp spring_reverb.cpp
+CPP_SOURCES = src/main.cpp src/convolution/$(CPP_IR_CONV)
+override CPP_SOURCES += src/emulation/mesa_power.cpp src/effects/delay.cpp src/effects/spring_reverb.cpp
 TARGET ?= $(basename $(notdir $(CPP_IR_CONV)))
 MESA_POWER_ENABLE ?= 0
 MESA_POWER_PRESENCE_PIN ?= -1
@@ -62,7 +62,7 @@ C_SOURCES = $(CMSIS_DIR)/DSP/Source/FilteringFunctions/arm_fir_f32.c   \
 			$(CMSIS_DIR)/DSP/Source/TransformFunctions/arm_cfft_radix8_f32.c \
 			$(CMSIS_DIR)/DSP/Source/CommonTables/arm_common_tables.c \
 			$(CMSIS_DIR)/DSP/Source/CommonTables/arm_const_structs.c
-ASM_SOURCES += arm_bitreversal2.s
+ASM_SOURCES += src/arm_bitreversal2.s
 
 # Core location, and generic Makefile.
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core

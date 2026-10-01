@@ -68,4 +68,4 @@ const header = [
   "",
 ].join("\n");
 
-fs.writeFileSync(path.join(PROJECT_DIR, "generated_ir.h"), header);
+fs.writeFileSync(path.join(PROJECT_DIR, "src", "convolution", "generated_ir.h"), header);
