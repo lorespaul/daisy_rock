@@ -99,28 +99,41 @@ The script only writes `src/convolution/generated_ir.h`; it does not compile or 
 
 ## Convert a WAV IR
 
-Manual conversion is also available:
+IR WAV files must be sampled at 48 kHz. Bit depth does not need to match the
+firmware: the converter accepts 8-, 16-, 24-, or 32-bit PCM and 32- or 64-bit
+floating-point WAV files.
+
+To generate the header from a single WAV file, run:
 
 ```bash
-node tools/wav2ir.js path/to/ir.wav 2048
+node tools/build_ir.js path/to/ir.wav 2048
 ```
 
-Supported generated IR lengths:
+Replace `path/to/ir.wav` with your file path. `2048` is the number of samples
+in the generated IR (42.67 ms at 48 kHz), not its bit depth. The command writes
+`src/convolution/generated_ir.h`; then run `make` to build the firmware.
+`tools/wav2ir.js` only prints C++ values to the terminal and is not needed for
+normal builds.
 
-```txt
-128, 256, 512, 1024, 2048, 4096
-```
+Supported generated IR lengths and the minimum WAV duration needed to fill
+each one at 48 kHz:
+
+| IR length | Minimum duration |
+| ---: | ---: |
+| 128 samples | 2.67 ms |
+| 256 samples | 5.33 ms |
+| 512 samples | 10.67 ms |
+| 1024 samples | 21.33 ms |
+| 2048 samples | 42.67 ms |
+| 4096 samples | 85.33 ms |
+
+Shorter WAV files can still be built; the converter pads the unused samples
+with zeros.
 
 `src/convolution/generated_ir.h` contains only the float array. The tracked
 `src/convolution/ir.h` includes it,
 derives `kIrSize` and `kIrCount`, and handles the QSPI-to-SDRAM copy. The IR
 length is not a compiler define.
-
-If you convert manually, paste only the array into `src/convolution/generated_ir.h`:
-
-```cpp
-static const float irs_qspi[][2048] IR_QSPI_STORAGE = {{1.0f}};
-```
 
 ### QSPI memory map
 
