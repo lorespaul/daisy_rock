@@ -1,7 +1,5 @@
-IR_Mesa_V30_4x12/**/*.wav binary
-IR_Mesa_V30_4x12/**/*.zip binary
-IR_Mesa_V30_4x12/**/*.pdf binary
-IR_Mesa_V30_4x12/**/*.nam binary
-IR_Marshall_Greenback_4x12/**/*.wav binary
-IR_Marshall_Greenback_4x12/**/*.pdf binary
+IRs/**/*.wav binary
+IRs/**/*.zip binary
+IRs/**/*.pdf binary
+IRs/**/*.nam binary
 doc/Daisy_Seed_datasheet_v1.0.5.pdf binary
